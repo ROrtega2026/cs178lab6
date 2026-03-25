@@ -205,7 +205,7 @@ const ConfigPanel = (function () {
     if (applyButton) {
       applyButton.addEventListener("click", function () {
         if (onSettingsChangeCallback) {
-          onSettingsChangeCallback(settings);
+          onSettingsChangeCallback({ ...settings, visualOptions: { ...settings.visualOptions } });
         }
       });
     }
