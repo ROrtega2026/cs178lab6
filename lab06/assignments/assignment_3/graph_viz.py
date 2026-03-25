@@ -1,77 +1,46 @@
 import kuzu
 
 def process_graph_data(result):
-    """
-    TODO: implement the processing function that transforms query result into a format suitable for frontend visualization
-    """
-    
-    # Sample movie graph data with target output structure
-    sample_data = {
-        "nodes": [
-            {
-                "id": "Movie_1",
+    results = result.get_as_df()
+
+    nodes = {}
+    links = []
+
+    for _, row in results.iterrows():
+        m = row["m"]
+        r = row["r"]
+        n = row["n"]
+
+        m_id = m["movieId"]
+
+        if m_id not in nodes:
+            nodes[m_id] = {
+                "id": m_id,
                 "labels": ["Movie"],
-                "properties": {"title": "The Matrix", "year": 1999}
-            },
-            {
-                "id": "Person_1",
-                "labels": ["Person"],
-                "properties": {"name": "Keanu Reeves"}
-            },
-            {
-                "id": "Person_2",
-                "labels": ["Person"],
-                "properties": {"name": "Laurence Fishburne"}
-            },
-            {
-                "id": "Person_3",
-                "labels": ["Person"],
-                "properties": {"name": "Carrie-Anne Moss"}
-            },
-            {
-                "id": "Person_4",
-                "labels": ["Person"],
-                "properties": {"name": "Lana Wachowski", "role": "Director"}
-            },
-            {
-                "id": "Genre_1",
-                "labels": ["Genre"],
-                "properties": {"name": "Sci-Fi"}
+                "properties": {"title": m["title"], "year": m["year"], "genres": m["genres"]}
             }
-        ],
-        "links": [
-            {
-                "source": "Person_1",
-                "target": "Movie_1",
-                "type": "ACTED_IN"
-            },
-            {
-                "source": "Person_2",
-                "target": "Movie_1",
-                "type": "ACTED_IN"
-            },
-            {
-                "source": "Person_3",
-                "target": "Movie_1",
-                "type": "ACTED_IN"
-            },
-            {
-                "source": "Person_4",
-                "target": "Movie_1",
-                "type": "DIRECTED"
-            },
-            {
-                "source": "Movie_1",
-                "target": "Genre_1",
-                "type": "IN_GENRE"
+
+        n_id = n["userId"]
+
+        if n_id not in nodes:
+            nodes[n_id] = {
+                "id": n_id,
+                "labels": ["User"],
+                "properties": {}
             }
-        ]
-    }
+
+        links.append({
+            "source": m_id,
+            "target": n_id,
+            "type": r["_label"]
+        })
+
+    return {"nodes": list(nodes.values()), "links": links}
     
-    return sample_data
 
 def construct_query(year=None, operator='>', limit=100):
-    """
-    TODO: Copy the parameterized query function from the previous part and make it work here
-    """
-    return "MATCH (m) RETURN m LIMIT 25"
+    return f"""MATCH (m:Movie) 
+               WHERE m.year {operator} {year} 
+               MATCH (m)-[r]-(n)
+               RETURN m, r, n
+               LIMIT {limit}"""
